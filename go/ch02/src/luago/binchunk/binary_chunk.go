@@ -40,7 +40,7 @@ const (
 type binaryChunk struct {
 	header                 // 头部
 	sizeUpvalue byte       // 主函数 upvalue 数量
-	mainFunc    *prototype // 主函数原型
+	mainFunc    *Prototype // 主函数原型
 }
 
 type header struct {
@@ -58,7 +58,7 @@ type header struct {
 }
 
 //prototype 函数原型
-type prototype struct {
+type Prototype struct {
 	Source          string        // @hello_world.lua '11 40 68 65 6C 6C 6F 5F 77 6F 72 6C 64 2E' 源文件名 只有主函数里有 0x11 代表字符串长度+1
 	LineDefined     uint32        // '00 00 00 00' 函数起止行号 主函数都为0 非主函数都大于0
 	LastLineDefined uint32        // '00 00 00 00'
@@ -68,7 +68,7 @@ type prototype struct {
 	Code            []uint32      // '04 00 00 00  06 00 40 00  41 40 00 00  24 40 00 01  26 00 80 00'指令表 每条指令四个字节
 	Constants       []interface{} // '02 00 00 00   04 06 70 72 69 6E 74  04 0E 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21' 常量表
 	Upvalues        []Upvalue     // '01 00 00 00    01 00' upvalue表 每个值占用两字节
-	Protos          []*prototype  // '00 00 00 00' 子函数原型表
+	Protos          []*Prototype  // '00 00 00 00' 子函数原型表
 	LineInfo        []uint32      // '04 00 00 00  01 00 00 00  01 00 00 00  01 00 00 00  01 00 00 00 ' 行号表 指令对应的行号
 	LocVars         []LocVar      // '00 00 00 00' 局部变量长度为0
 	UpvalueNames    []string      // '01 00 00 00     05 5F 45 4E 56' _ENV upvalue name表
@@ -85,4 +85,11 @@ type LocVar struct {
 	VarName string
 	StartPC uint32 //起止指令索引
 	EndPC   uint32
+}
+
+func Undump(data []byte) *Prototype {
+	reader := &reader{data}
+	reader.checkHeader()        // 检验头部
+	reader.readByte()           // 跳过 Upvalue 数量
+	return reader.readProto("") // 读取函数原型
 }
